@@ -3,11 +3,9 @@ import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="Σύνδεση - SEO Report - IT DEV" showHeader={false}>
   <div id="login-page" class="hidden fixed inset-0 z-0 flex min-h-screen">
-    <div class="hidden w-1/2 items-center justify-center md:flex" style="background-color: #0cb09a;">
-      <div class="flex flex-col items-center gap-6 px-8">
-        <img src="/logo-black.svg" alt="SEO Report" class="h-24 w-auto max-w-[200px] object-contain [filter:brightness(0)_invert(1)]" />
-        <span class="text-2xl font-bold tracking-tight text-white">SEO Report</span>
-        <span class="text-lg font-medium text-white/90">IT DEV</span>
+    <div class="hidden w-1/2 items-center justify-center md:flex" style="background-color: #e6f6f0;">
+      <div class="flex flex-col items-center px-8">
+        <img src="/logo-black.svg" alt="SEO Report" class="h-24 w-auto max-w-[200px] object-contain" />
       </div>
     </div>
     <div class="flex w-full flex-col justify-center bg-white px-6 py-12 md:w-1/2 md:px-16 lg:px-24">
@@ -79,7 +77,9 @@ import Layout from '../layouts/Layout.astro';
   const eyeClosed = document.getElementById('eye-closed');
 
   if (!isFirebaseConfigured || !auth) {
-    window.location.href = '/dashboard';
+    // Mockup: εμφάνιση login page με background (χωρίς redirect)
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (page) page.classList.remove('hidden');
   } else {
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -101,14 +101,21 @@ import Layout from '../layouts/Layout.astro';
     });
   }
 
-  if (loginForm && auth) {
+  if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = (document.getElementById('email') as HTMLInputElement).value;
-      const password = (document.getElementById('password') as HTMLInputElement).value;
-      if (loginError) loginError.classList.add('hidden');
       const btn = document.getElementById('login-submit') as HTMLButtonElement;
       if (btn) btn.disabled = true;
+      if (loginError) loginError.classList.add('hidden');
+
+      if (!auth) {
+        // Mockup: οποιαδήποτε τιμή → dashboard
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      const email = (document.getElementById('email') as HTMLInputElement).value;
+      const password = (document.getElementById('password') as HTMLInputElement).value;
       try {
         await signInWithEmailAndPassword(auth, email, password);
         window.location.href = '/dashboard';
