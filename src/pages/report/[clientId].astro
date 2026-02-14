@@ -1,0 +1,45 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PeriodSelector from '../../components/PeriodSelector.astro';
+import DashboardContent from '../../components/DashboardContent.astro';
+import { fetchDashboardData } from '../../lib/search-console';
+import { getClientById } from '../../data/mock-clients';
+
+export async function getStaticPaths() {
+  const { mockClients } = await import('../../data/mock-clients');
+  return mockClients.map((client) => ({ params: { clientId: client.id } }));
+}
+
+const { clientId } = Astro.params;
+const client = getClientById(clientId!);
+if (!client) {
+  return Astro.redirect('/admin');
+}
+
+const data = await fetchDashboardData({ domain: client.domain });
+---
+
+<Layout title={`${client.name} - SEO Report - IT DEV`} domain={client.domain} showHeader={true}>
+  <div slot="header-actions" class="flex flex-wrap items-end gap-4">
+    <a
+      href="/admin"
+      class="rounded-lg bg-white/20 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 shrink-0"
+    >
+      ← Admin
+    </a>
+    <PeriodSelector />
+    <button
+      type="button"
+      id="export-pdf"
+      class="rounded-lg bg-white/20 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 shrink-0"
+    >
+      Εξαγωγή PDF
+    </button>
+  </div>
+
+  <div class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm text-dark">
+    <strong>Report πελάτη:</strong> {client.name} ({client.domain}) — Μπορείτε να μοιραστείτε αυτό το link για να το δείτε παρέα.
+  </div>
+
+  <DashboardContent data={{ metrics: data.metrics, topKeywords: data.topKeywords, topPages: data.topPages }} />
+</Layout>
