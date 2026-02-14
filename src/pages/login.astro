@@ -1,0 +1,126 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Σύνδεση - SEO Report - IT DEV" showHeader={false}>
+  <div id="login-page" class="hidden fixed inset-0 z-0 flex min-h-screen">
+    <div class="hidden w-1/2 items-center justify-center md:flex" style="background-color: #0cb09a;">
+      <div class="flex flex-col items-center gap-6 px-8">
+        <img src="/logo-black.svg" alt="SEO Report" class="h-24 w-auto max-w-[200px] object-contain [filter:brightness(0)_invert(1)]" />
+        <span class="text-2xl font-bold tracking-tight text-white">SEO Report</span>
+        <span class="text-lg font-medium text-white/90">IT DEV</span>
+      </div>
+    </div>
+    <div class="flex w-full flex-col justify-center bg-white px-6 py-12 md:w-1/2 md:px-16 lg:px-24">
+      <div class="mx-auto w-full max-w-sm">
+        <h1 class="text-2xl font-bold text-dark">Σύνδεση στον λογαριασμό σας</h1>
+        <form id="login-form" class="mt-8 space-y-5">
+          <div>
+            <label for="email" class="sr-only">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autocomplete="email"
+              placeholder="Email"
+              class="block w-full rounded-lg border border-gray-300 px-4 py-3 text-dark placeholder-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label for="password" class="sr-only">Κωδικός πρόσβασης</label>
+            <div class="relative">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="Κωδικός πρόσβασης"
+                class="block w-full rounded-lg border border-gray-300 px-4 py-3 pr-12 text-dark placeholder-gray-500 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <button type="button" id="toggle-password" aria-label="Εμφάνιση κωδικού" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <svg id="eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg id="eye-closed" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <p id="login-error" class="hidden text-sm text-red-600"></p>
+          <button type="submit" id="login-submit" class="w-full rounded-lg px-4 py-3 text-base font-medium text-white transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" style="background-color: #0cb09a;">
+            Σύνδεση
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div id="login-loading" class="fixed inset-0 z-50 flex min-h-screen items-center justify-center bg-gray-50">
+    <div class="flex flex-col items-center gap-4">
+      <div class="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+      <p class="text-sm text-gray-500">Φόρτωση...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { auth, isFirebaseConfigured } from '../lib/firebase';
+  import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+
+  const page = document.getElementById('login-page');
+  const loadingEl = document.getElementById('login-loading');
+  const loginForm = document.getElementById('login-form') as HTMLFormElement;
+  const loginError = document.getElementById('login-error');
+  const passwordInput = document.getElementById('password') as HTMLInputElement;
+  const toggleBtn = document.getElementById('toggle-password');
+  const eyeOpen = document.getElementById('eye-open');
+  const eyeClosed = document.getElementById('eye-closed');
+
+  if (!isFirebaseConfigured || !auth) {
+    window.location.href = '/dashboard';
+  } else {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = '/dashboard';
+      } else {
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (page) page.classList.remove('hidden');
+      }
+    });
+  }
+
+  if (toggleBtn && passwordInput && eyeOpen && eyeClosed) {
+    toggleBtn.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      eyeOpen.classList.toggle('hidden', isPassword);
+      eyeClosed.classList.toggle('hidden', !isPassword);
+      toggleBtn.setAttribute('aria-label', isPassword ? 'Απόκρυψη κωδικού' : 'Εμφάνιση κωδικού');
+    });
+  }
+
+  if (loginForm && auth) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = (document.getElementById('email') as HTMLInputElement).value;
+      const password = (document.getElementById('password') as HTMLInputElement).value;
+      if (loginError) loginError.classList.add('hidden');
+      const btn = document.getElementById('login-submit') as HTMLButtonElement;
+      if (btn) btn.disabled = true;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = '/dashboard';
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Σφάλμα σύνδεσης';
+        if (loginError) {
+          loginError.textContent = message;
+          loginError.classList.remove('hidden');
+        }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  }
+</script>

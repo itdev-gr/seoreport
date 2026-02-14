@@ -4,29 +4,41 @@ import PeriodSelector from '../../components/PeriodSelector.astro';
 import DashboardContent from '../../components/DashboardContent.astro';
 import { fetchDashboardData } from '../../lib/search-console';
 import { getClientById } from '../../data/mock-clients';
+import { isAdminConfigured, getClientByIdFromFirestore } from '../../lib/firebase-admin';
+
+export const prerender = false;
 
 export async function getStaticPaths() {
+  if (isAdminConfigured()) return [];
   const { mockClients } = await import('../../data/mock-clients');
   return mockClients.map((client) => ({ params: { clientId: client.id } }));
 }
 
 const { clientId } = Astro.params;
-const client = getClientById(clientId!);
-if (!client) {
-  return Astro.redirect('/admin');
-}
+if (!clientId) return Astro.redirect('/admin');
 
-const data = await fetchDashboardData({ domain: client.domain });
+const clientFromFirestore = isAdminConfigured() ? await getClientByIdFromFirestore(clientId) : null;
+const clientFromMock = getClientById(clientId);
+const client = clientFromFirestore ?? clientFromMock;
+
+if (!client) return Astro.redirect('/admin');
+
+const displayDomain = client.domain ?? (client as { searchConsoleId?: string }).searchConsoleId ?? '';
+const searchConsoleId = (client as { searchConsoleId?: string }).searchConsoleId ?? client.domain;
+const data = await fetchDashboardData({ domain: displayDomain, searchConsoleId });
+const showAdminLink = Astro.url.searchParams.get('from') === 'admin';
 ---
 
-<Layout title={`${client.name} - SEO Report - IT DEV`} domain={client.domain} showHeader={true}>
+<Layout title={`${client.name} - SEO Report - IT DEV`} domain={displayDomain} showHeader={true}>
   <div slot="header-actions" class="flex flex-wrap items-end gap-4">
-    <a
-      href="/admin"
-      class="rounded-lg bg-white/20 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 shrink-0"
-    >
-      ← Admin
-    </a>
+    {showAdminLink && (
+      <a
+        href="/admin"
+        class="rounded-lg bg-white/20 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 shrink-0"
+      >
+        ← Admin
+      </a>
+    )}
     <PeriodSelector />
     <button
       type="button"
@@ -37,9 +49,11 @@ const data = await fetchDashboardData({ domain: client.domain });
     </button>
   </div>
 
-  <div class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm text-dark">
-    <strong>Report πελάτη:</strong> {client.name} ({client.domain}) — Μπορείτε να μοιραστείτε αυτό το link για να το δείτε παρέα.
-  </div>
+  {showAdminLink && (
+    <div class="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm text-dark">
+      <strong>Report πελάτη:</strong> {client.name} ({displayDomain}) — Μπορείτε να μοιραστείτε αυτό το link για να το δείτε παρέα.
+    </div>
+  )}
 
   <DashboardContent data={{ metrics: data.metrics, topKeywords: data.topKeywords, topPages: data.topPages }} />
 </Layout>

@@ -4,31 +4,33 @@ import { mockClients } from '../../data/mock-clients';
 ---
 
 <Layout title="Admin - SEO Report - IT DEV" showHeader={true}>
-  <div slot="header-actions">
-    <a
-      href="/dashboard"
-      class="rounded-lg bg-white/20 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-    >
+  <div slot="header-actions" class="flex flex-wrap items-center gap-3">
+    <a href="/dashboard" class="rounded-lg bg-white/20 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
       ← Dashboard
+    </a>
+    <a href="/setup" class="rounded-lg bg-white/20 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
+      Προσθήκη πελάτη →
     </a>
   </div>
 
   <div class="rounded-xl border border-gray-200 bg-white shadow-card overflow-hidden">
-    <div class="border-b border-gray-100 px-6 py-4">
-      <h1 class="text-xl font-semibold text-dark">Admin Panel</h1>
-      <p class="mt-0.5 text-sm text-gray-500">Επιλέξτε πελάτη για να δείτε το report. Μπορείτε να το ανοίξετε και να το δείτε παρέα με τον πελάτη (ίδιο link).</p>
+    <div class="border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-semibold text-dark">Admin</h1>
+        <p class="mt-0.5 text-sm text-gray-500">Λίστα πελατών. Επιλέξτε πελάτη για να δείτε το report και να το δείτε παρέα με τον πελάτη (ίδιο link).</p>
+      </div>
+      <button type="button" id="refresh-clients" class="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        Ανανέωση λίστας
+      </button>
     </div>
-    <ul class="divide-y divide-gray-100">
+    <ul id="clients-list" class="divide-y divide-gray-100">
       {mockClients.map((client) => (
         <li class="flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50/50 transition">
           <div>
             <p class="font-medium text-dark">{client.name}</p>
             <p class="text-sm text-gray-500">{client.domain}</p>
           </div>
-          <a
-            href={`/report/${client.id}`}
-            class="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          >
+          <a href={`/report/${client.id}?from=admin`} class="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
             Προβολή report
           </a>
         </li>
@@ -36,3 +38,32 @@ import { mockClients } from '../../data/mock-clients';
     </ul>
   </div>
 </Layout>
+
+<script>
+  const listEl = document.getElementById('clients-list');
+  const refreshBtn = document.getElementById('refresh-clients');
+
+  async function loadClients() {
+    if (!listEl) return;
+    try {
+      const res = await fetch('/api/clients');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Σφάλμα φόρτωσης');
+      const clients = Array.isArray(data) ? data : [];
+      listEl.innerHTML = clients.map((c: { id: string; name: string; domain?: string; searchConsoleId?: string; email?: string }) => `
+        <li class="flex items-center justify-between gap-4 px-6 py-4 hover:bg-gray-50/50 transition">
+          <div>
+            <p class="font-medium text-dark">${c.name}</p>
+            <p class="text-sm text-gray-500">${c.domain || c.searchConsoleId || ''}${c.email ? ` · ${c.email}` : ''}</p>
+          </div>
+          <a href="/report/${c.id}?from=admin" class="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">Προβολή report</a>
+        </li>
+      `).join('');
+    } catch {
+      listEl.innerHTML = '<li class="px-6 py-4 text-sm text-gray-500">Χρήση mock λίστας (API μη διαθέσιμο).</li>';
+    }
+  }
+
+  if (refreshBtn) refreshBtn.addEventListener('click', loadClients);
+  loadClients();
+</script>

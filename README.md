@@ -18,11 +18,22 @@ cp .env.example .env
 npm run dev
 ```
 
-### Firebase
+### Firebase (client – login πελάτη)
 
 1. Δημιουργήστε project στο [Firebase Console](https://console.firebase.google.com).
 2. Ενεργοποιήστε **Authentication** → **Sign-in method** → **Email/Password**.
 3. Αντιγράψτε τα config values στο `.env` (όπως στο `.env.example`).
+
+### Firebase Admin (setup + admin)
+
+- **Setup** (`/setup`) – για το άτομο που προσθέτει πελάτες: φόρμα email, κωδικός, Search Console ID. Δημιουργεί χρήστη στο Firebase Auth και εγγραφή στο Firestore.
+- **Admin** (`/admin`) – για το άτομο που δουλεύει τα reports: λίστα πελατών, προβολή report (και παρέα με τον πελάτη).
+
+Για να λειτουργήσει η προσθήκη πελατών:
+
+1. Στο Firebase Console: **Project Settings** → **Service accounts** → **Generate new private key**. Αποθηκεύστε το JSON.
+2. Ενεργοποιήστε **Firestore Database** στο project.
+3. Στο `.env` ορίστε `FIREBASE_SERVICE_ACCOUNT_JSON` = το περιεχόμενο του JSON (σε μία γραμμή, escaped).
 
 ## Δομή
 
@@ -44,9 +55,9 @@ src/
 
 ## Scripts
 
-- `npm run dev` – development
-- `npm run build` – production build
-- `npm run preview` – preview build
+- `npm run dev` – development (server + API routes)
+- `npm run build` – production build (output: server, απαιτεί Node adapter)
+- `npm run preview` – τρέχει το built server τοπικά
 
 ## Brand colors
 
