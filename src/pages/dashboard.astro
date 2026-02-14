@@ -1,0 +1,121 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MetricCard from '../components/MetricCard.astro';
+import DataTable from '../components/DataTable.astro';
+import PeriodSelector from '../components/PeriodSelector.astro';
+import { fetchDashboardData } from '../lib/search-console';
+import AuthWrapper from '../components/AuthWrapper.astro';
+
+const data = await fetchDashboardData({ period: 'Τελευταίος Μήνας' });
+const { metrics, topKeywords, topPages } = data;
+
+const keywordColumns = [
+  { key: 'keyword', label: 'Λέξη Κλειδί' },
+  { key: 'clicks', label: 'Κλικ' },
+  { key: 'impressions', label: 'Εμφανίσεις' },
+  { key: 'ctr', label: 'CTR' },
+  { key: 'position', label: 'Μέση Θέση' },
+  { key: 'change', label: 'Μεταβολή' },
+];
+
+const pageColumns = [
+  { key: 'url', label: 'URL' },
+  { key: 'clicks', label: 'Κλικ' },
+  { key: 'impressions', label: 'Εμφανίσεις' },
+  { key: 'ctr', label: 'CTR' },
+  { key: 'position', label: 'Μέση Θέση' },
+  { key: 'change', label: 'Μεταβολή' },
+];
+---
+
+<Layout title="SEO Report - IT DEV" showHeader={true}>
+  <div slot="header-actions" class="flex flex-wrap items-end gap-4">
+    <PeriodSelector />
+    <button
+      type="button"
+      id="export-pdf"
+      class="rounded-lg bg-white/20 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 shrink-0"
+    >
+      Εξαγωγή PDF
+    </button>
+  </div>
+
+  <AuthWrapper>
+    <div class="space-y-8">
+      <!-- Πρώτη σειρά metrics -->
+      <section>
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            title={metrics.impressions.title}
+            value={metrics.impressions.value}
+            change={metrics.impressions.change}
+            changeLabel={metrics.impressions.changeLabel}
+            sparkData={metrics.impressions.sparkData}
+            icon={metrics.impressions.icon}
+          />
+          <MetricCard
+            title={metrics.clicks.title}
+            value={metrics.clicks.value}
+            change={metrics.clicks.change}
+            sparkData={metrics.clicks.sparkData}
+            icon={metrics.clicks.icon}
+          />
+          <MetricCard
+            title={metrics.position.title}
+            value={metrics.position.value}
+            change={metrics.position.change}
+            sparkData={metrics.position.sparkData}
+            icon={metrics.position.icon}
+          />
+          <MetricCard
+            title={metrics.ctr.title}
+            value={metrics.ctr.value}
+            change={metrics.ctr.change}
+            sparkData={metrics.ctr.sparkData}
+            icon={metrics.ctr.icon}
+          />
+        </div>
+      </section>
+
+      <!-- Δεύτερη σειρά -->
+      <section>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <MetricCard
+            title={metrics.totalClicks.title}
+            value={metrics.totalClicks.value}
+            change={metrics.totalClicks.change}
+            sparkData={metrics.totalClicks.sparkData}
+            icon={metrics.totalClicks.icon}
+          />
+          <MetricCard
+            title={metrics.totalKeywords.title}
+            value={metrics.totalKeywords.value}
+            change={metrics.totalKeywords.change}
+            sparkData={metrics.totalKeywords.sparkData}
+            icon={metrics.totalKeywords.icon}
+          />
+        </div>
+      </section>
+
+      <!-- Πίνακας λέξεων κλειδιών -->
+      <section>
+        <DataTable
+          title="Κορυφαίες 10 Λέξεις Κλειδιών"
+          columns={keywordColumns}
+          rows={topKeywords.map((r) => ({ ...r, ctr: r.ctr.toFixed(2) }))}
+          emptyMessage="Δεν υπάρχουν δεδομένα λέξεων κλειδιών"
+        />
+      </section>
+
+      <!-- Πίνακας σελίδων -->
+      <section>
+        <DataTable
+          title="Κορυφαίες Σελίδες"
+          columns={pageColumns}
+          rows={topPages.map((r) => ({ ...r, ctr: r.ctr.toFixed(2) }))}
+          emptyMessage="Δεν υπάρχουν δεδομένα σελίδων"
+        />
+      </section>
+    </div>
+  </AuthWrapper>
+</Layout>

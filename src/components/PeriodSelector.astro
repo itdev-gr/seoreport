@@ -1,0 +1,84 @@
+---
+import { getPeriodOptions } from '../lib/periods';
+
+const periodOptions = getPeriodOptions();
+const defaultPeriod = periodOptions[0];
+---
+
+<div class="period-selector relative" data-period-selector>
+  <label for="period-trigger" class="block text-xs font-semibold uppercase tracking-wider text-white mb-1.5">
+    ΑΝΑΦΟΡΑ ΓΙΑ
+  </label>
+  <button
+    type="button"
+    id="period-trigger"
+    aria-haspopup="listbox"
+    aria-expanded="false"
+    aria-label="Επιλογή περιόδου"
+    class="flex min-w-[240px] items-center justify-between gap-2 rounded-lg bg-dark/60 border border-white/20 px-4 py-2.5 text-left text-sm font-medium text-white shadow-sm transition hover:bg-dark/70 focus:outline-none focus:ring-2 focus:ring-white/40"
+  >
+    <span id="period-label">{defaultPeriod.label}</span>
+    <svg id="period-chevron" class="h-4 w-4 shrink-0 text-white/90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+  <div
+    id="period-dropdown"
+    role="listbox"
+    aria-hidden="true"
+    class="absolute left-0 top-full z-[100] mt-1 max-h-[320px] min-w-[280px] overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-xl hidden"
+  >
+    {periodOptions.map((opt) => (
+      <button
+        type="button"
+        role="option"
+        data-period-value={opt.value}
+        data-period-label={opt.label}
+        class="w-full px-4 py-2.5 text-left text-sm text-dark hover:bg-primary/10 focus:bg-primary/10 focus:outline-none data-[selected]:bg-primary/15 data-[selected]:font-medium"
+        data-selected={opt.value === defaultPeriod.value}
+      >
+        {opt.label}
+      </button>
+    ))}
+  </div>
+</div>
+
+<script>
+  const selector = document.querySelector('[data-period-selector]');
+  const trigger = document.getElementById('period-trigger');
+  const labelEl = document.getElementById('period-label');
+  const dropdown = document.getElementById('period-dropdown');
+
+  if (selector && trigger && labelEl && dropdown) {
+    const chevron = document.getElementById('period-chevron');
+    trigger.addEventListener('click', () => {
+      const isOpen = dropdown.classList.contains('hidden');
+      dropdown.classList.toggle('hidden', !isOpen);
+      trigger.setAttribute('aria-expanded', String(isOpen));
+      chevron?.classList.toggle('rotate-180', isOpen);
+    });
+
+    dropdown.querySelectorAll('[role="option"]').forEach((opt) => {
+      opt.addEventListener('click', () => {
+        const value = (opt as HTMLElement).dataset.periodValue;
+        const label = (opt as HTMLElement).dataset.periodLabel;
+        if (label) labelEl.textContent = label;
+        dropdown.querySelectorAll('[role="option"]').forEach((o) => o.removeAttribute('data-selected'));
+        opt.setAttribute('data-selected', 'true');
+        dropdown.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+        document.getElementById('period-chevron')?.classList.remove('rotate-180');
+        // Μελλοντικά: κλήση GSC API με value (startDate, endDate)
+        window.dispatchEvent(new CustomEvent('period-change', { detail: { value, label } }));
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!selector?.contains(e.target as Node)) {
+        dropdown.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+        document.getElementById('period-chevron')?.classList.remove('rotate-180');
+      }
+    });
+  }
+</script>

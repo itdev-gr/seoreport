@@ -1,0 +1,74 @@
+---
+interface Props {
+  title: string;
+  columns: { key: string; label: string }[];
+  rows: Record<string, string | number>[];
+  emptyMessage?: string;
+  loading?: boolean;
+}
+
+const { title, columns, rows, emptyMessage = 'Δεν υπάρχουν δεδομένα', loading = false } = Astro.props;
+---
+
+<div class="rounded-xl border border-gray-100 bg-white shadow-card overflow-hidden">
+  <div class="border-b border-gray-100 px-5 py-4">
+    <h2 class="text-lg font-semibold text-dark">{title}</h2>
+  </div>
+  <div class="overflow-x-auto">
+    {loading ? (
+      <div class="p-6 space-y-4 animate-pulse">
+        {[...Array(5)].map(() => (
+          <div class="flex gap-4">
+            <div class="h-4 bg-gray-200 rounded flex-1" />
+            <div class="h-4 bg-gray-200 rounded w-16" />
+            <div class="h-4 bg-gray-200 rounded w-20" />
+            <div class="h-4 bg-gray-200 rounded w-14" />
+            <div class="h-4 bg-gray-200 rounded w-16" />
+          </div>
+        ))}
+      </div>
+    ) : rows.length === 0 ? (
+      <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+        <svg class="h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <p class="text-sm text-gray-500">{emptyMessage}</p>
+      </div>
+    ) : (
+      <table class="min-w-full divide-y divide-gray-100">
+        <thead class="bg-gray-50/80">
+          <tr>
+            {columns.map((col) => (
+              <th scope="col" class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 bg-white">
+          {rows.map((row) => (
+            <tr class="transition-colors hover:bg-gray-50/50">
+              {columns.map((col) => (
+                <td class="whitespace-nowrap px-5 py-3 text-sm text-dark">
+                  {col.key === 'url' && typeof row[col.key] === 'string' ? (
+                    <a href={row[col.key] as string} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline truncate max-w-[200px] block">
+                      {(row[col.key] as string).replace(/^https?:\/\//, '')}
+                    </a>
+                  ) : col.key === 'ctr' && typeof row[col.key] === 'number' ? (
+                    `${row[col.key]}%`
+                  ) : col.key === 'change' ? (
+                    <span class={Number(row[col.key]) >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                      {Number(row[col.key]) >= 0 ? '+' : ''}{row[col.key]}
+                    </span>
+                  ) : (
+                    row[col.key]
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+</div>

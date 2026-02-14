@@ -1,0 +1,16 @@
+---
+/**
+ * Αρχική σελίδα: redirect στο dashboard.
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="SEO Report - IT DEV" showHeader={false}>
+  <div class="flex min-h-[50vh] items-center justify-center">
+    <p class="text-gray-500">Ανα redirect στο Dashboard...</p>
+  </div>
+</Layout>
+
+<script>
+  window.location.replace('/dashboard');
+</script>
