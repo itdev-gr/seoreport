@@ -18,7 +18,7 @@ const { redirectTo = '/dashboard' } = Astro.props;
 </div>
 
 <script>
-  import { auth, isFirebaseConfigured } from '../lib/firebase';
+  import { auth, isMockupMode } from '../lib/firebase';
   import { onAuthStateChanged, signOut } from 'firebase/auth';
 
   const loadingEl = document.getElementById('auth-loading');
@@ -34,7 +34,7 @@ const { redirectTo = '/dashboard' } = Astro.props;
     if (contentEl) contentEl.classList.remove('hidden');
   }
 
-  if (!isFirebaseConfigured || !auth) {
+  if (isMockupMode) {
     showContent();
   } else {
     onAuthStateChanged(auth, (user) => {

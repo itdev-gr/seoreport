@@ -19,6 +19,9 @@ const firebaseConfig = {
 /** True μόνο αν έχει συμπληρωθεί Firebase config (.env) */
 export const isFirebaseConfigured = Boolean(import.meta.env.PUBLIC_FIREBASE_API_KEY);
 
+/** Mockup mode: είτε δεν υπάρχει Firebase, είτε PUBLIC_MOCKUP=true (π.χ. live demo) */
+export const isMockupMode = import.meta.env.PUBLIC_MOCKUP === 'true' || !isFirebaseConfigured;
+
 let authInstance: Auth | null = null;
 if (isFirebaseConfigured) {
   const app = initializeApp(firebaseConfig);
