@@ -1,9 +1,16 @@
 import type { APIRoute } from 'astro';
-import { getDecodedTokenFromRequest, getUserProfile, upsertUserProfileInFirestore } from '../../lib/firebase-admin';
+import { getAdminAuth, getDecodedTokenFromRequest, getUserProfile, upsertUserProfileInFirestore } from '../../lib/firebase-admin';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request }) => {
+  const auth = await getAdminAuth();
+  if (!auth) {
+    return new Response(
+      JSON.stringify({ error: 'Firebase Admin not configured (set FIREBASE_SERVICE_ACCOUNT_JSON in .env)', code: 'admin_required' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
   const decoded = await getDecodedTokenFromRequest(request);
   if (!decoded) {
     console.log('[Firebase API] me: invalid_token');

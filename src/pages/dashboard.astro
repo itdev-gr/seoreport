@@ -37,6 +37,10 @@ const data = await fetchDashboardData({ period: 'Τελευταίος Μήνας
       const token = await user.getIdToken();
       try {
         const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.status === 503) {
+          document.getElementById('auth-setup-banner')?.classList.remove('hidden');
+          return;
+        }
         if (!res.ok) return;
         const data = await res.json();
         if (data.role === 'admin') {

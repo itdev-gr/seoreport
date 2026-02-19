@@ -6,6 +6,9 @@ const { redirectTo = '/dashboard' } = Astro.props;
 ---
 
 <div id="auth-root">
+  <div id="auth-setup-banner" class="hidden border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="alert">
+    Ρύθμιση server: πρόσθεσε <strong>FIREBASE_SERVICE_ACCOUNT_JSON</strong> στο αρχείο <code>.env</code> (βλ. .env.example) και κάνε restart το server.
+  </div>
   <div id="auth-loading" class="flex min-h-[40vh] items-center justify-center">
     <div class="flex flex-col items-center gap-4">
       <div class="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -48,6 +51,9 @@ const { redirectTo = '/dashboard' } = Astro.props;
           fetch('/api/user/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          }).then((res) => {
+            const banner = document.getElementById('auth-setup-banner');
+            if (banner && res.status === 503) banner.classList.remove('hidden');
           }).catch(() => {});
         }).catch(() => {});
       } else {
