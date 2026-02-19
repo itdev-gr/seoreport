@@ -1,12 +1,13 @@
 import type { APIRoute } from 'astro';
+import { requireAdmin, getClientsFromFirestore } from '../../lib/firebase-admin';
+import { mockClients } from '../../data/mock-clients';
 
 export const prerender = false;
 
-import { getClientsFromFirestore } from '../../lib/firebase-admin';
-import { mockClients } from '../../data/mock-clients';
-
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
   console.log('[Firebase API] GET /api/clients');
+  const authResult = await requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
   try {
     const clients = await getClientsFromFirestore();
     console.log('[Firebase API] clients: count', clients.length);

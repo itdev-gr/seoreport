@@ -69,6 +69,8 @@ export interface ClientRecord {
   createdAt: string;
 }
 
+export type UserRole = 'admin' | 'user';
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -76,6 +78,15 @@ export interface UserProfile {
   updatedAt: string;
   createdAt?: string;
   displayName?: string;
+  /** Set on first create from ADMIN_EMAILS; preserved on subsequent syncs. */
+  role?: UserRole;
+}
+
+function isAdminEmail(email: string): boolean {
+  const list = process.env.ADMIN_EMAILS;
+  if (!list || !email) return false;
+  const emails = list.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return emails.includes(email.toLowerCase());
 }
 
 export async function upsertUserProfileInFirestore(
@@ -98,9 +109,58 @@ export async function upsertUserProfileInFirestore(
   };
   if (!existing.exists) {
     data.createdAt = now;
+    data.role = isAdminEmail(email) ? 'admin' : 'user';
   }
   await ref.set(data, { merge: true });
   console.log('[Firebase Admin] upsertUserProfile: done');
+}
+
+export async function getUserIdFromRequest(request: Request): Promise<string | null> {
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return null;
+  const auth = await getAdminAuth();
+  if (!auth) return null;
+  try {
+    const decoded = await auth.verifyIdToken(token);
+    return decoded.uid ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  const db = await getAdminDb();
+  if (!db) return null;
+  const doc = await db.collection(COLLECTION_USERS).doc(uid).get();
+  if (!doc.exists) return null;
+  return doc.data() as UserProfile;
+}
+
+/** Returns { uid, profile } or a 403 Response. */
+export async function requireAdmin(request: Request): Promise<{ uid: string; profile: UserProfile } | Response> {
+  const uid = await getUserIdFromRequest(request);
+  if (!uid) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  const profile = await getUserProfile(uid);
+  if (!profile || profile.role !== 'admin') {
+    return new Response(JSON.stringify({ error: 'Forbidden: admin only' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return { uid, profile };
+}
+
+export async function updateUserRole(uid: string, role: UserRole): Promise<void> {
+  const db = await getAdminDb();
+  if (!db) throw new Error('Firebase Admin not configured');
+  const now = new Date().toISOString();
+  await db.collection(COLLECTION_USERS).doc(uid).set({ role, updatedAt: now }, { merge: true });
 }
 
 function slugFromEmail(email: string): string {

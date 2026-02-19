@@ -40,14 +40,23 @@ import { mockClients } from '../../data/mock-clients';
 </Layout>
 
 <script>
+  import { auth } from '../../lib/firebase';
+
   const listEl = document.getElementById('clients-list');
   const refreshBtn = document.getElementById('refresh-clients');
 
   async function loadClients() {
     if (!listEl) return;
+    const token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     try {
-      const res = await fetch('/api/clients');
+      const res = await fetch('/api/clients', { headers });
       const data = await res.json();
+      if (res.status === 403) {
+        listEl.innerHTML = '<li class="px-6 py-4 text-sm text-amber-600">Δεν έχετε δικαιώματα. Παρακαλώ συνδεθείτε ως admin.</li>';
+        return;
+      }
       if (!res.ok) throw new Error(data.error || 'Σφάλμα φόρτωσης');
       const clients = Array.isArray(data) ? data : [];
       listEl.innerHTML = clients.map((c: { id: string; name: string; domain?: string; searchConsoleId?: string; email?: string }) => `

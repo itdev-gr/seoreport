@@ -60,6 +60,8 @@ import Layout from '../../layouts/Layout.astro';
 </Layout>
 
 <script>
+  import { auth } from '../../lib/firebase';
+
   const form = document.getElementById('add-client-form') as HTMLFormElement;
   const messageEl = document.getElementById('add-client-message') as HTMLParagraphElement;
   const submitBtn = document.getElementById('add-client-submit') as HTMLButtonElement;
@@ -83,15 +85,24 @@ import Layout from '../../layouts/Layout.astro';
         showMessage('Συμπληρώστε email, κωδικό και Search Console ID.', true);
         return;
       }
+      const token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+      if (!token) {
+        showMessage('Παρακαλώ συνδεθείτε.', true);
+        return;
+      }
       if (submitBtn) submitBtn.disabled = true;
       showMessage('Δημιουργία πελάτη...', false);
       try {
         const res = await fetch('/api/create-client', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ email, password, name: name || undefined, searchConsoleId, domain: domain || undefined }),
         });
         const data = await res.json();
+        if (res.status === 403) {
+          showMessage('Δεν έχετε δικαιώματα. Μόνο admins μπορούν να δημιουργήσουν πελάτη.', true);
+          return;
+        }
         if (!res.ok) throw new Error(data.error || 'Σφάλμα');
         showMessage(`Ο πελάτης δημιουργήθηκε. Report: /report/${data.client.id}`, false);
         form.reset();

@@ -1,14 +1,15 @@
 import type { APIRoute } from 'astro';
+import { requireAdmin, getAdminAuth, createClientInFirestore } from '../../lib/firebase-admin';
 
 export const prerender = false;
-
-import { getAdminAuth, createClientInFirestore } from '../../lib/firebase-admin';
 
 export const POST: APIRoute = async ({ request }) => {
   console.log('[Firebase API] POST /api/create-client');
   if (request.headers.get('content-type')?.includes('application/json') === false) {
     return new Response(JSON.stringify({ error: 'Content-Type must be application/json' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
+  const authResult = await requireAdmin(request);
+  if (authResult instanceof Response) return authResult;
   let body: { email?: string; password?: string; name?: string; domain?: string; searchConsoleId?: string };
   try {
     body = await request.json();
