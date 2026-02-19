@@ -116,6 +116,12 @@ export async function upsertUserProfileInFirestore(
 }
 
 export async function getUserIdFromRequest(request: Request): Promise<string | null> {
+  const decoded = await getDecodedTokenFromRequest(request);
+  return decoded?.uid ?? null;
+}
+
+/** Returns { uid, email } from Authorization Bearer token, or null if missing/invalid. Use for /api/me to get email for lazy-create. */
+export async function getDecodedTokenFromRequest(request: Request): Promise<{ uid: string; email?: string } | null> {
   const authHeader = request.headers.get('Authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) return null;
@@ -123,7 +129,10 @@ export async function getUserIdFromRequest(request: Request): Promise<string | n
   if (!auth) return null;
   try {
     const decoded = await auth.verifyIdToken(token);
-    return decoded.uid ?? null;
+    const uid = decoded.uid ?? null;
+    if (!uid) return null;
+    const email = (decoded.email as string | undefined) ?? undefined;
+    return { uid, email };
   } catch {
     return null;
   }
