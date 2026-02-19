@@ -24,6 +24,8 @@ const { redirectTo = '/dashboard' } = Astro.props;
   const loadingEl = document.getElementById('auth-loading');
   const contentEl = document.getElementById('auth-content');
 
+  console.log('[Firebase] AuthWrapper: isMockupMode', isMockupMode, 'auth', auth ? 'exists' : 'null');
+
   function showLoading() {
     if (loadingEl) loadingEl.classList.remove('hidden');
     if (contentEl) contentEl.classList.add('hidden');
@@ -36,19 +38,26 @@ const { redirectTo = '/dashboard' } = Astro.props;
 
   if (isMockupMode) {
     showContent();
-  } else {
+  } else if (auth) {
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        console.log('[Firebase] AuthWrapper: user signed in');
         showContent();
       } else {
+        console.log('[Firebase] AuthWrapper: no user, redirect to /login');
         window.location.href = '/login';
       }
     });
+  } else {
+    console.log('[Firebase] AuthWrapper: no auth, redirect to /login');
+    window.location.href = '/login';
   }
 
   document.getElementById('auth-root')?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).id === 'logout-btn' && auth) {
+      console.log('[Firebase] Logout clicked, calling signOut');
       signOut(auth);
+      console.log('[Firebase] signOut called');
     }
   });
 </script>

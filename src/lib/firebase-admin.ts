@@ -20,7 +20,11 @@ async function initAdmin(): Promise<boolean> {
   if (adminApp) return true;
   if (initPromise) return initPromise;
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!serviceAccountJson) return false;
+  if (!serviceAccountJson) {
+    console.log('[Firebase Admin] initAdmin: no FIREBASE_SERVICE_ACCOUNT_JSON');
+    return false;
+  }
+  console.log('[Firebase Admin] initAdmin: starting');
   initPromise = (async () => {
     try {
       const { default: admin } = await import('firebase-admin');
@@ -28,8 +32,10 @@ async function initAdmin(): Promise<boolean> {
       adminApp = admin.initializeApp({ credential: admin.credential.cert(serviceAccount as object) });
       adminAuth = admin.auth();
       adminDb = admin.firestore();
+      console.log('[Firebase Admin] initAdmin: success');
       return true;
-    } catch {
+    } catch (e) {
+      console.log('[Firebase Admin] initAdmin: error', e instanceof Error ? e.message : String(e));
       return false;
     }
   })();
@@ -38,11 +44,13 @@ async function initAdmin(): Promise<boolean> {
 
 export async function getAdminAuth(): Promise<Auth | null> {
   await initAdmin();
+  console.log('[Firebase Admin] getAdminAuth', adminAuth ? 'ok' : 'null');
   return adminAuth;
 }
 
 export async function getAdminDb(): Promise<Firestore | null> {
   await initAdmin();
+  console.log('[Firebase Admin] getAdminDb', adminDb ? 'ok' : 'null');
   return adminDb;
 }
 
@@ -75,6 +83,7 @@ export async function upsertUserProfileInFirestore(
   email: string,
   displayName?: string
 ): Promise<void> {
+  console.log('[Firebase Admin] upsertUserProfile', { uid, email });
   const db = await getAdminDb();
   if (!db) throw new Error('Firebase Admin not configured');
   const now = new Date().toISOString();
@@ -91,6 +100,7 @@ export async function upsertUserProfileInFirestore(
     data.createdAt = now;
   }
   await ref.set(data, { merge: true });
+  console.log('[Firebase Admin] upsertUserProfile: done');
 }
 
 function slugFromEmail(email: string): string {
@@ -103,26 +113,36 @@ export async function createClientInFirestore(
   searchConsoleId: string,
   domain?: string
 ): Promise<ClientRecord> {
+  const id = slugFromEmail(email);
+  console.log('[Firebase Admin] createClientInFirestore', { email, id });
   const db = await getAdminDb();
   if (!db) throw new Error('Firebase Admin not configured');
-  const id = slugFromEmail(email);
   const now = new Date().toISOString();
   const record: ClientRecord = { id, email, name, searchConsoleId, domain, createdAt: now };
   await db.collection(COLLECTION_CLIENTS).doc(id).set(record);
+  console.log('[Firebase Admin] createClientInFirestore: done');
   return record;
 }
 
 export async function getClientsFromFirestore(): Promise<ClientRecord[]> {
+  console.log('[Firebase Admin] getClientsFromFirestore');
   const db = await getAdminDb();
   if (!db) return [];
   const snap = await db.collection(COLLECTION_CLIENTS).orderBy('createdAt', 'desc').get();
-  return snap.docs.map((d) => d.data() as ClientRecord);
+  const list = snap.docs.map((d) => d.data() as ClientRecord);
+  console.log('[Firebase Admin] getClientsFromFirestore: count', list.length);
+  return list;
 }
 
 export async function getClientByIdFromFirestore(clientId: string): Promise<ClientRecord | null> {
+  console.log('[Firebase Admin] getClientByIdFromFirestore', clientId);
   const db = await getAdminDb();
   if (!db) return null;
   const doc = await db.collection(COLLECTION_CLIENTS).doc(clientId).get();
-  if (!doc.exists) return null;
+  if (!doc.exists) {
+    console.log('[Firebase Admin] getClientByIdFromFirestore: not found');
+    return null;
+  }
+  console.log('[Firebase Admin] getClientByIdFromFirestore: found');
   return doc.data() as ClientRecord;
 }

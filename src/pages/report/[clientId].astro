@@ -17,7 +17,9 @@ export async function getStaticPaths() {
 const { clientId } = Astro.params;
 if (!clientId) return Astro.redirect('/admin');
 
+console.log('[Firebase] report: getClientByIdFromFirestore', clientId);
 const clientFromFirestore = isAdminConfigured() ? await getClientByIdFromFirestore(clientId) : null;
+console.log('[Firebase] report: getClientByIdFromFirestore', clientFromFirestore ? 'found' : 'null');
 const clientFromMock = getClientById(clientId);
 const client = clientFromFirestore ?? clientFromMock;
 

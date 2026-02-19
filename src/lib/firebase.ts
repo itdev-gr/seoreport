@@ -24,8 +24,13 @@ export const isMockupMode = import.meta.env.PUBLIC_MOCKUP === 'true' || !isFireb
 
 let authInstance: Auth | null = null;
 if (isFirebaseConfigured) {
+  console.log('[Firebase] Config loaded, initializing app', { projectId: firebaseConfig.projectId || '(empty)' });
   const app = initializeApp(firebaseConfig);
+  console.log('[Firebase] App initialized');
   authInstance = getAuth(app);
+  console.log('[Firebase] Auth instance created');
+} else {
+  console.log('[Firebase] Not configured (mockup or missing env), auth=null');
 }
 
 export const auth = authInstance;

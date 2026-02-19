@@ -76,6 +76,8 @@ import Layout from '../layouts/Layout.astro';
   const eyeOpen = document.getElementById('eye-open');
   const eyeClosed = document.getElementById('eye-closed');
 
+  console.log('[Firebase] Login page: isMockupMode', isMockupMode, 'auth', auth ? 'exists' : 'null');
+
   if (isMockupMode) {
     // Mockup: εμφάνιση login page (local ή live demo με PUBLIC_MOCKUP=true)
     if (loadingEl) loadingEl.classList.add('hidden');
@@ -83,8 +85,11 @@ import Layout from '../layouts/Layout.astro';
   } else if (auth) {
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        console.log('[Firebase] Auth state: user', { uid: user.uid, email: user.email });
+        console.log('[Firebase] User already signed in, redirecting to /dashboard');
         window.location.href = '/dashboard';
       } else {
+        console.log('[Firebase] Auth state: no user');
         if (loadingEl) loadingEl.classList.add('hidden');
         if (page) page.classList.remove('hidden');
       }
@@ -112,27 +117,38 @@ import Layout from '../layouts/Layout.astro';
       if (loginError) loginError.classList.add('hidden');
 
       if (!auth) {
-        // Mockup: οποιαδήποτε τιμή → dashboard
+        console.log('[Firebase] Mockup mode submit, redirect to /dashboard');
         window.location.href = '/dashboard';
         return;
       }
 
       const email = (document.getElementById('email') as HTMLInputElement).value;
       const password = (document.getElementById('password') as HTMLInputElement).value;
+      console.log('[Firebase] Sign in attempt', { email });
       try {
         const userCred = await signInWithEmailAndPassword(auth, email, password);
+        console.log('[Firebase] Sign in success', { uid: userCred.user.uid });
+        console.log('[Firebase] Getting ID token');
         const token = await userCred.user.getIdToken();
+        console.log('[Firebase] Calling /api/user/sync');
         try {
-          await fetch('/api/user/sync', {
+          const syncRes = await fetch('/api/user/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           });
+          if (syncRes.ok) {
+            console.log('[Firebase] User sync OK');
+          } else {
+            console.log('[Firebase] User sync failed (non-blocking)', syncRes.status);
+          }
         } catch {
-          // Sync is best-effort; do not block redirect
+          console.log('[Firebase] User sync failed (non-blocking)');
         }
+        console.log('[Firebase] Redirecting to /dashboard');
         window.location.href = '/dashboard';
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Σφάλμα σύνδεσης';
+        console.log('[Firebase] Sign in error', message);
         if (loginError) {
           loginError.textContent = message;
           loginError.classList.remove('hidden');
