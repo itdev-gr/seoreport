@@ -130,6 +130,7 @@ import Layout from '../layouts/Layout.astro';
         console.log('[Firebase] Sign in success', { uid: userCred.user.uid });
         console.log('[Firebase] Getting ID token');
         const token = await userCred.user.getIdToken();
+        // Check Firestore for user doc and create if missing (so every login has a DB record)
         console.log('[Firebase] Calling /api/user/sync');
         try {
           const syncRes = await fetch('/api/user/sync', {

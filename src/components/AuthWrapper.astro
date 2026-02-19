@@ -43,6 +43,13 @@ const { redirectTo = '/dashboard' } = Astro.props;
       if (user) {
         console.log('[Firebase] AuthWrapper: user signed in');
         showContent();
+        // Ensure user exists in Firestore (check + create if missing) on every protected page load
+        user.getIdToken().then((token) => {
+          fetch('/api/user/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          }).catch(() => {});
+        }).catch(() => {});
       } else {
         console.log('[Firebase] AuthWrapper: no user, redirect to /login');
         window.location.href = '/login';

@@ -44,11 +44,11 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  console.log('[Firebase API] sync: token verified', { uid, email });
+  console.log('[Firebase API] sync: token verified, writing to Firestore users collection', { uid, email });
   try {
-    await upsertUserProfileInFirestore(uid, email, name ?? undefined);
-    console.log('[Firebase API] sync: upsert done');
-    return new Response(JSON.stringify({ ok: true }), {
+    const created = await upsertUserProfileInFirestore(uid, email, name ?? undefined);
+    console.log('[Firebase API] sync: upsert done', created ? '(new user doc created)' : '(existing doc updated)');
+    return new Response(JSON.stringify({ ok: true, created }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

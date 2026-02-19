@@ -89,11 +89,12 @@ function isAdminEmail(email: string): boolean {
   return emails.includes(email.toLowerCase());
 }
 
+/** Returns true if a new document was created, false if updated existing. */
 export async function upsertUserProfileInFirestore(
   uid: string,
   email: string,
   displayName?: string
-): Promise<void> {
+): Promise<boolean> {
   console.log('[Firebase Admin] upsertUserProfile', { uid, email });
   const db = await getAdminDb();
   if (!db) throw new Error('Firebase Admin not configured');
@@ -107,12 +108,14 @@ export async function upsertUserProfileInFirestore(
     updatedAt: now,
     ...(displayName ? { displayName } : {}),
   };
-  if (!existing.exists) {
+  const isNew = !existing.exists;
+  if (isNew) {
     data.createdAt = now;
     data.role = isAdminEmail(email) ? 'admin' : 'user';
   }
   await ref.set(data, { merge: true });
-  console.log('[Firebase Admin] upsertUserProfile: done');
+  console.log('[Firebase Admin] upsertUserProfile: done', isNew ? '(created in Firestore)' : '(updated in Firestore)');
+  return isNew;
 }
 
 export async function getUserIdFromRequest(request: Request): Promise<string | null> {
