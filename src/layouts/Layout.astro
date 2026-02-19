@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  domain?: string;
+  showHeader?: boolean;
+}
+
+const { title = 'SEO Report - IT DEV', description = 'SEO Report - Βασικά στατιστικά από Google Search Console', domain = '', showHeader = true } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="el">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" href="/favicon-optivize.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-gray-50 font-sans">
+    <div class="min-h-screen flex flex-col">
+      {showHeader && (
+        <header
+          class="relative z-30 overflow-visible px-4 py-6 sm:px-6 lg:px-8"
+          style="background: linear-gradient(135deg, #0c1929 0%, #0c1929 40%, #0cb09a 100%);"
+        >
+          <div class="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold tracking-tight text-white">SEO Report</h1>
+              {domain && <p class="mt-0.5 text-sm text-white/80">{domain}</p>}
+            </div>
+            <slot name="header-actions" />
+          </div>
+        </header>
+      )}
+      <main class="relative z-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+          <slot />
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

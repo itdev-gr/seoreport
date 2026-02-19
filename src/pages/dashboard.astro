@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PeriodSelector from '../components/PeriodSelector.astro';
+import DashboardContent from '../components/DashboardContent.astro';
+import { fetchDashboardData } from '../lib/search-console';
+import AuthWrapper from '../components/AuthWrapper.astro';
+
+const data = await fetchDashboardData({ period: 'Τελευταίος Μήνας' });
+---
+
+<Layout title="SEO Report - IT DEV" showHeader={true}>
+  <div slot="header-actions" class="flex flex-wrap items-end gap-4">
+    <PeriodSelector />
+    <button
+      type="button"
+      id="export-pdf"
+      class="rounded-lg bg-white/20 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 shrink-0"
+    >
+      Εξαγωγή PDF
+    </button>
+  </div>
+
+  <AuthWrapper>
+    <DashboardContent data={{ metrics: data.metrics, topKeywords: data.topKeywords, topPages: data.topPages }} />
+  </AuthWrapper>
+</Layout>

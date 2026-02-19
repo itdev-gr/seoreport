@@ -1,0 +1,54 @@
+---
+interface Props {
+  redirectTo?: string;
+}
+const { redirectTo = '/dashboard' } = Astro.props;
+---
+
+<div id="auth-root">
+  <div id="auth-loading" class="flex min-h-[40vh] items-center justify-center">
+    <div class="flex flex-col items-center gap-4">
+      <div class="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <p class="text-sm text-gray-500">Φόρτωση...</p>
+    </div>
+  </div>
+  <div id="auth-content" class="hidden">
+    <slot />
+  </div>
+</div>
+
+<script>
+  import { auth, isMockupMode } from '../lib/firebase';
+  import { onAuthStateChanged, signOut } from 'firebase/auth';
+
+  const loadingEl = document.getElementById('auth-loading');
+  const contentEl = document.getElementById('auth-content');
+
+  function showLoading() {
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    if (contentEl) contentEl.classList.add('hidden');
+  }
+
+  function showContent() {
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (contentEl) contentEl.classList.remove('hidden');
+  }
+
+  if (isMockupMode) {
+    showContent();
+  } else {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        showContent();
+      } else {
+        window.location.href = '/login';
+      }
+    });
+  }
+
+  document.getElementById('auth-root')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).id === 'logout-btn' && auth) {
+      signOut(auth);
+    }
+  });
+</script>
